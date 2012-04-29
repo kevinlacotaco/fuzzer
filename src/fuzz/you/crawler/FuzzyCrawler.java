@@ -6,14 +6,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
-import com.gargoylesoftware.htmlunit.html.HtmlForm;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.gargoylesoftware.htmlunit.util.UrlUtils;
 
-import fuzz.you.engine.FuzzEngine;
 
 public class FuzzyCrawler {
 	/**
@@ -21,43 +15,55 @@ public class FuzzyCrawler {
 	 */
 	private static HashMap<URI, FuzzyPage> fuzzyPageMap = new HashMap<URI, FuzzyPage>();
 	private static HashSet<URI> siteURIs = new HashSet<URI>();
-	private static URI baseURI;
+	
+	private static HashMap<URI, FuzzyPage> loggedinFuzzyPageMap = new HashMap<URI, FuzzyPage>();
+	private static HashSet<URI> loggedinSiteURIs = new HashSet<URI>();
+	
+	private static HashMap<Boolean, HashMap<URI, FuzzyPage>> mapMap = new HashMap<Boolean, HashMap<URI, FuzzyPage>>();
+	private static HashMap<Boolean, HashSet<URI>> setMap = new HashMap<Boolean, HashSet<URI>>();
 
+	public static HashMap<URI, FuzzyPage> getFuzzyPageMap(boolean loggedIn) {
+		if(loggedIn) {
+			return loggedinFuzzyPageMap;
+		} else {
+			return fuzzyPageMap;
+		}
+	}
+	
+	public static HashSet<URI> getSiteURIs(boolean loggedIn) {
+		if(loggedIn) {
+			return loggedinSiteURIs;
+		} else {
+			return siteURIs;
+		}
+	}
+	
 	public static void generatePagesNotLoggedIn(Properties properties, WebClient webClient) throws URISyntaxException {
-		baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
-		generatePages(baseURI, webClient);
+		URI baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
+		generatePages(baseURI, webClient, false);
 	}
 	
 	public static void generatePagesLoggedIn(Properties properties, WebClient webClient) throws URISyntaxException {
 		
 	}
 	
-	public static HashMap<URI, FuzzyPage> getFuzzyPageMap() {
-		return fuzzyPageMap;
-	}
-	
-	public static HashSet<URI> getSiteURIs() {
-		return siteURIs;
-	}
-	
-	private static void generatePages(URI pageURI, WebClient webClient) {
+	private static void generatePages(URI pageURI, WebClient webClient, Boolean loggedIn) {
 		// Page not yet scraped
-		if (!fuzzyPageMap.containsKey(pageURI)) {
+		if (!mapMap.get(loggedIn).containsKey(pageURI)) {
 			try {
 				FuzzyPage fuzzyPage = new FuzzyPage(webClient.getPage(pageURI.toString()));
-				fuzzyPageMap.put(pageURI, fuzzyPage);
+				mapMap.get(loggedIn).put(pageURI, fuzzyPage);
 
 				// Scrape page
 				for (URI uri : fuzzyPage.getAllPageURIs()) {
 					
 					//Check if it has been scraped already.
-					if (!fuzzyPageMap.containsKey(uri)) {
+					if (!mapMap.get(loggedIn).containsKey(uri)) {
 						try {
-							siteURIs.add(generateBasicPageURI(uri));
+							setMap.get(loggedIn).add(generateBasicPageURI(uri));
 							System.out.println("URI: " + pageURI);
-							generatePages(uri, webClient);
+							generatePages(uri, webClient, loggedIn);
 						} catch (URISyntaxException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}
