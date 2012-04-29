@@ -16,53 +16,12 @@ import com.gargoylesoftware.htmlunit.util.UrlUtils;
 import fuzz.you.engine.FuzzEngine;
 
 public class FuzzyCrawler {
-
-	private static Properties properties = new Properties();
-
 	/**
 	 * A set containing all of the pages found on the system.
 	 */
 	private static HashMap<URI, FuzzyPage> fuzzyPageMap = new HashMap<URI, FuzzyPage>();
-
 	private static HashSet<URI> siteURIs = new HashSet<URI>();
-
 	private static URI baseURI;
-
-	public static void main(String[] args) {
-
-		try {
-			properties.load(new FileInputStream(
-					"config/FuzzyCrawlerConfig.prop"));
-
-			try {
-				baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
-			} catch (URISyntaxException e) {
-				e.printStackTrace();
-			}
-			
-			WebClient webClient = new WebClient(BrowserVersion.FIREFOX_3_6);
-			webClient.setJavaScriptEnabled(true);
-			
-			// scrape for pages without login
-			generatePages(baseURI, webClient);
-			
-			// scrape for pages with login
-			
-
-//			for (URI u : siteURIs) {
-//				System.out.println(u.toString());
-//			}
-//
-//			System.out.println(siteURIs.size());
-
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 
 	public static void generatePagesNotLoggedIn(Properties properties, WebClient webClient) throws URISyntaxException {
 		baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
@@ -71,6 +30,14 @@ public class FuzzyCrawler {
 	
 	public static void generatePagesLoggedIn(Properties properties, WebClient webClient) throws URISyntaxException {
 		
+	}
+	
+	public static HashMap<URI, FuzzyPage> getFuzzyPageMap() {
+		return fuzzyPageMap;
+	}
+	
+	public static HashSet<URI> getSiteURIs() {
+		return siteURIs;
 	}
 	
 	private static void generatePages(URI pageURI, WebClient webClient) {
