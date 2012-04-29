@@ -73,6 +73,10 @@ public class FuzzyPage {
 	public HashSet<URI> getAllPageURIs() {
 		return fuzzyPageURIsSet;
 	}
+	
+	public List<FuzzyForm> getAllForms() {
+		return fuzzyPageForms;
+	}
 
 	private void discoverForms() {
 		try {
@@ -93,7 +97,6 @@ public class FuzzyPage {
 			String baseHost = baseURI.getHost();
 
 			for (HtmlAnchor link : pageAnchors) {
-
 				String uriHref = link.getHrefAttribute().replace(" ", "%20");
 
 				URI discoveredURI = new URI(uriHref);
