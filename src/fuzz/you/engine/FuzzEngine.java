@@ -34,6 +34,7 @@ public class FuzzEngine {
         WebClient webClient = new WebClient(BrowserVersion.FIREFOX_3_6);
         webClient.setJavaScriptEnabled(true);
         webClient.setThrowExceptionOnScriptError(false);
+        webClient.setPrintContentOnFailingStatusCode(false);
         webClient
                 .setAjaxController(new NicelyResynchronizingAjaxController());
 
@@ -95,6 +96,7 @@ public class FuzzEngine {
             String random_string = RandomFuzzer.getRandomString();
 
             // basic fuzzed url with just this param
+
             String urlFuzzed = page.getUnescapedPageURL() + "?" + urlParam
                     + "=" + random_string;
             checkFuzzedURLWithParams(urlFuzzed, webClient);
