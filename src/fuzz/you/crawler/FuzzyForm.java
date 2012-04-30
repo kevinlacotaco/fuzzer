@@ -1,9 +1,12 @@
 package fuzz.you.crawler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlInput;
+import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 
 public class FuzzyForm{
 
@@ -17,6 +20,14 @@ public class FuzzyForm{
 		 fuzzyForm = htmlForms;
 		 discoverLostChildrenElements();
 		 
+	}
+	
+	public List<HtmlInput> getAllInputs() {
+		return new ArrayList<HtmlInput>();
+	}
+	
+	public HtmlSubmitInput getSubmitButton() {
+		return null;
 	}
 	
 	private void discoverLostChildrenElements(){

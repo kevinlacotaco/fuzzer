@@ -11,3 +11,4 @@ PageGuessing=False
 TimeDelaySec=0
 Completeness=full
 URIIterations=1
+FullUrlParamFuzzing=False

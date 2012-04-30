@@ -135,7 +135,7 @@ public class FuzzVectors {
             "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><!DOCTYPE foo [<!ELEMENT foo ANY><!ENTITY xxe SYSTEM \"file:///etc/shadow\">]><foo>&xee;</foo>",
             "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><!DOCTYPE foo [<!ELEMENT foo ANY><!ENTITY xxe SYSTEM \"file:///dev/random\">]><foo>&xee;</foo>", };
 
-    public String[] getAttackClass(final String attackClass) {
+    public static String[] getAttackClass(final String attackClass) {
         if (attackClass.equals("xss")) {
             return XSSAttacks;
         } else if (attackClass.equals("string")) {
@@ -158,5 +158,10 @@ public class FuzzVectors {
         }
 
         return null;
+    }
+    
+    public static String[] getAllVectors() {
+    	String[] vectors = {"string", "int", "passiveSQL", "activeSQL", "ldap", "xpath", "xml", "sql"};
+    	return vectors;
     }
 }

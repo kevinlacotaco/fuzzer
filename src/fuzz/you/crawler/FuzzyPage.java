@@ -55,6 +55,9 @@ public class FuzzyPage {
     // );
     // }
     // }
+    public String toString() {
+        return baseURI.toString();
+    }
 
     public URI getPageURI() {
         return baseURI;
@@ -66,6 +69,10 @@ public class FuzzyPage {
 
     public HashSet<URI> getAllPageURIs() {
         return fuzzyPageURIsSet;
+    }
+
+    public List<String> getAllURLParams() {
+        return new ArrayList<String>();
     }
 
     public List<FuzzyForm> getAllForms() {
@@ -91,9 +98,16 @@ public class FuzzyPage {
             String baseHost = baseURI.getHost();
 
             for (HtmlAnchor link : pageAnchors) {
-                String uriHref = link.getHrefAttribute().replace(" ", "%20");
-
-                URI discoveredURI = new URI(uriHref);
+                URI discoveredURI;
+                if (link.getHrefAttribute().equals("")) {
+                    HtmlPage nextPage = link.click();
+                    discoveredURI = nextPage.getUrl().toURI();
+                    System.out.println(discoveredURI);
+                } else {
+                    String uriHref = link.getHrefAttribute().replace(" ",
+                            "%20");
+                    discoveredURI = new URI(uriHref);
+                }
 
                 String discoveredHost = discoveredURI.getHost();
 
@@ -113,15 +127,14 @@ public class FuzzyPage {
             }
         } catch (ClassCastException cce) {
             System.err.println("Invalid Class Cast: " + cce.getMessage());
+        } catch (Exception horriblePractice) {
+            System.err.println("Yeah, we're screwed: "
+                    + horriblePractice.getMessage());
         }
     }
-
     // private Collection<T> inputs;
 
     // Property URL Parameters - ? &
     // Collection of Forms
 
-    public String toString() {
-        return baseURI.toString();
-    }
 }
