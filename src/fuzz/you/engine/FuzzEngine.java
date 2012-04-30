@@ -37,6 +37,7 @@ public class FuzzEngine {
         WebClient webClient = new WebClient(BrowserVersion.FIREFOX_3_6);
         webClient.setJavaScriptEnabled(true);
         webClient.setThrowExceptionOnScriptError(false);
+        webClient.setPrintContentOnFailingStatusCode(false);
         webClient
                 .setAjaxController(new NicelyResynchronizingAjaxController());
 
