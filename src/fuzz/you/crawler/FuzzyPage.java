@@ -3,8 +3,11 @@ package fuzz.you.crawler;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.html.HtmlAnchor;
@@ -20,6 +23,7 @@ public class FuzzyPage {
     private String Password = null;
     private HashSet<URI> fuzzyPageURIsSet;
     private List<FuzzyForm> fuzzyPageForms;
+    private Map<String, List<String>> urlParams;
 
     // Each page -> URL Params as collection
     // UserName & Pass Params
@@ -30,6 +34,7 @@ public class FuzzyPage {
         fuzzyPage = page;
         fuzzyPageForms = new ArrayList<FuzzyForm>();
         fuzzyPageURIsSet = new HashSet<URI>();
+        urlParams = new HashMap<String, List<String>>();
 
         try {
             baseURI = fuzzyPage.getUrl().toURI();
@@ -71,8 +76,8 @@ public class FuzzyPage {
         return fuzzyPageURIsSet;
     }
 
-    public List<String> getAllURLParams() {
-        return new ArrayList<String>();
+    public Set<String> getAllURLParamsNoValues() {
+        return urlParams.keySet();
     }
 
     public List<FuzzyForm> getAllForms() {
@@ -122,6 +127,26 @@ public class FuzzyPage {
                             resolvedURI.getScheme(),
                             resolvedURI.getAuthority(),
                             resolvedURI.getPath(), null, null);
+
+                    String query = resolvedURI.getRawQuery();
+
+                    if (query != null) {
+                        String[] params = query.split("&");
+
+                        for (String param : params) {
+                            String[] values = param.split("=");
+
+                            if (urlParams.containsKey(values[0])) {
+                                urlParams.get(values[0]).add(values[1]);
+                            } else {
+                                ArrayList<String> valid = new ArrayList<String>();
+                                valid.add(values[1]);
+
+                                urlParams.put(values[0], valid);
+                            }
+                        }
+                    }
+
                     fuzzyPageURIsSet.add(strippedResolvedURI);
                 }
             }

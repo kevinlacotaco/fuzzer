@@ -89,7 +89,7 @@ public class FuzzEngine {
 
         List<String> urlCombinations = new ArrayList<String>();
 
-        for (String urlParam : page.getAllURLParams()) {
+        for (String urlParam : page.getAllURLParamsNoValues()) {
             // generate a random string for the uri
             String random_string = "asdf"; // TODO: get real random string
 
