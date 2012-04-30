@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Properties;
 
 import utils.FuzzVectors;
+import utils.FuzzyLogger;
 import utils.RandomFuzzer;
 import utils.ResultsProcessor;
 
@@ -30,6 +31,8 @@ public class FuzzEngine {
     private static Properties properties;
 
     public static void main(String[] args) {
+    	System.getProperties().put("org.apache.commons.logging.simplelog.defaultlog", "error");
+    	
         // create web client
         WebClient webClient = new WebClient(BrowserVersion.FIREFOX_3_6);
         webClient.setJavaScriptEnabled(true);
@@ -44,8 +47,6 @@ public class FuzzEngine {
         try {
             // scrape logged out
             FuzzyCrawler.generatePagesNotLoggedIn(properties, webClient);
-            System.out.println("Pages found not logged in:"
-                    + FuzzyCrawler.getFuzzyPageMap(false));
 
             // for every page we found logged out, fuzz it
             for (FuzzyPage page : FuzzyCrawler.getFuzzyPageMap(false)
@@ -87,8 +88,6 @@ public class FuzzEngine {
     }
 
     private static void fuzzURLParams(FuzzyPage page, WebClient webClient) {
-        loadProperties();
-
         List<String> urlCombinations = new ArrayList<String>();
 
         for (String urlParam : page.getAllURLParamsNoValues()) {
@@ -123,18 +122,18 @@ public class FuzzEngine {
             WebClient webClient) {
         try {
             HtmlPage checkedPage = webClient.getPage(urlWithParams);
-            ResultsProcessor.process(checkedPage.asText());
+            ResultsProcessor.processWebResponse(checkedPage.getWebResponse());
         } catch (FailingHttpStatusCodeException e) {
-            e.printStackTrace(); // TODO: if necessary, store results!
+        	FuzzyLogger.logError(e.getMessage());
         } catch (MalformedURLException e) {
-            e.printStackTrace(); // TODO: if necessary, store results!
+        	FuzzyLogger.logError(e.getMessage());
         } catch (IOException e) {
-            e.printStackTrace(); // TODO: if necessary, store results!
+        	FuzzyLogger.logError(e.getMessage());
         }
+
     }
 
     private static void fuzzFormInputs(FuzzyPage page) {
-        loadProperties();
         for (FuzzyForm form : page.getAllForms()) {
             // try fuzzing one input at a time
             for (HtmlInput input : form.getAllInputs()) {
@@ -160,12 +159,13 @@ public class FuzzEngine {
         for (String randomInput : strings) {
             input.setValueAttribute(randomInput);
             try {
-                ResultsProcessor.process(submit.<HtmlPage> click()
-                        .getWebResponse().getContentAsString());
+                ResultsProcessor.processWebResponse(submit.<HtmlPage> click()
+                        .getWebResponse());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+
     }
 
 }

@@ -96,12 +96,9 @@ public class FuzzyCrawler {
 
                 mapForPagesFoundByLoginStatus.get(loggedIn).put(pageURI,
                         fuzzyPage);
-                System.out.println("adding a page: "
-                        + mapForPagesFoundByLoginStatus.get(loggedIn));
 
                 // Scrape page
                 for (URI uri : fuzzyPage.getAllPageURIs()) {
-
                     // Check if it has been scraped already.
                     if (!mapForPagesFoundByLoginStatus.get(loggedIn)
                             .containsKey(uri)) {
