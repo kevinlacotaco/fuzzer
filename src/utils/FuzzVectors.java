@@ -1,9 +1,14 @@
 package utils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class FuzzVectors {
+
+    private static List<String[]> allVectors = new ArrayList<String[]>();
 
     private static String XSSAttacks[] = {
             ">\"><script>alert(\"XSS\")</script>&",
@@ -30,18 +35,12 @@ public class FuzzVectors {
             "<IMG SRC=\"jav&#x0D;ascript:alert(<WBR>'XSS');\">" };
 
     private static String bufferOverflowAttacks[] = {
-            StringUtils.leftPad("", 5, 'A'),
-            StringUtils.leftPad("", 17, 'A'),
-            StringUtils.leftPad("", 33, 'A'),
-            StringUtils.leftPad("", 65, 'A'),
-            StringUtils.leftPad("", 129, 'A'),
-            StringUtils.leftPad("", 257, 'A'),
-            StringUtils.leftPad("", 513, 'A'),
-            StringUtils.leftPad("", 1024, 'A'),
-            StringUtils.leftPad("", 2049, 'A'),
-            StringUtils.leftPad("", 4097, 'A'),
-            StringUtils.leftPad("", 8193, 'A'),
-            StringUtils.leftPad("", 12288, 'A') };
+            StringUtils.repeat('A', 5), StringUtils.repeat('A', 17),
+            StringUtils.repeat('A', 33), StringUtils.repeat('A', 65),
+            StringUtils.repeat('A', 129), StringUtils.repeat('A', 257),
+            StringUtils.repeat('A', 513), StringUtils.repeat('A', 1024),
+            StringUtils.repeat('A', 2049), StringUtils.repeat('A', 4097),
+            StringUtils.repeat('A', 8193), StringUtils.repeat('A', 12288), };
 
     private static String intOverflowAttacks[] = { "-1", "0", "0x100",
             "0x1000", "0x3fffffff", "0x7ffffffe", "0x7fffffff", "0x80000000",
@@ -135,6 +134,26 @@ public class FuzzVectors {
             "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><!DOCTYPE foo [<!ELEMENT foo ANY><!ENTITY xxe SYSTEM \"file:///etc/shadow\">]><foo>&xee;</foo>",
             "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><!DOCTYPE foo [<!ELEMENT foo ANY><!ENTITY xxe SYSTEM \"file:///dev/random\">]><foo>&xee;</foo>", };
 
+    static {
+        allVectors.add(activeSQLInjectAttacks);
+        allVectors.add(bufferOverflowAttacks);
+        allVectors.add(intOverflowAttacks);
+        allVectors.add(LDAPInjectAttacks);
+        allVectors.add(passSQLInjectAttacks);
+        allVectors.add(XMLInjectAttacks);
+        allVectors.add(xpathAttacks);
+        allVectors.add(XSSAttacks);
+    }
+
+    public static List<String[]> getAllVectors() {
+        return allVectors;
+    }
+
+    public static String[] getAllVectorClasses() {
+        return new String[] { "activeSQL", "string", "int", "xss",
+                "passiveSQL", "ldap", "xpath", "xml" };
+    }
+
     public static String[] getAttackClass(final String attackClass) {
         if (attackClass.equals("xss")) {
             return XSSAttacks;
@@ -159,9 +178,5 @@ public class FuzzVectors {
 
         return null;
     }
-    
-    public static String[] getAllVectors() {
-    	String[] vectors = {"string", "int", "passiveSQL", "activeSQL", "ldap", "xpath", "xml", "sql"};
-    	return vectors;
-    }
+
 }
