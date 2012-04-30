@@ -1,6 +1,8 @@
 package utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -157,6 +159,14 @@ public class FuzzVectors {
         allVectors.add(commonUserNames);
     }
 
+    public static List<String> getAllVectorStrings() {
+    	List<String> allVectorStrings = new ArrayList<String>();
+    	for(String[] vectorList : getAllVectors()) {
+    		allVectorStrings.addAll(Arrays.asList(vectorList));
+    	}
+    	return allVectorStrings;
+    }
+    
     public static List<String[]> getAllVectors() {
         return allVectors;
     }

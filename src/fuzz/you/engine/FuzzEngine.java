@@ -92,30 +92,39 @@ public class FuzzEngine {
 
         for (String urlParam : page.getAllURLParamsNoValues()) {
             // generate a random string for the uri
-            String random_string = RandomFuzzer.getRandomString();
-
-            // basic fuzzed url with just this param
-
-            String urlFuzzed = page.getUnescapedPageURL() + "?" + urlParam
-                    + "=" + random_string;
-            checkFuzzedURLWithParams(urlFuzzed, webClient);
-
-            // test every possible combination of url parameters
-            if (properties.getProperty("FullUrlParamFuzzing") != null
-                    && Boolean.parseBoolean(properties
-                            .getProperty("FullUrlParamFuzzing"))) {
-                List<String> newURLCombinations = new ArrayList<String>();
-                newURLCombinations.add(urlFuzzed);
-                for (String existingURL : urlCombinations) {
-                    String modifiedURL = existingURL + "&" + urlParam + "="
-                            + random_string;
-                    checkFuzzedURLWithParams(modifiedURL, webClient);
-                    newURLCombinations.add(modifiedURL);
-                }
-
-                urlCombinations.addAll(newURLCombinations);
-            }
+        	List<String> randomStrings = new ArrayList<String>();
+        	if(properties.getProperty("Completeness").equals("full")) {
+        		randomStrings = FuzzVectors.getAllVectorStrings();
+        	}
+        	else if(properties.getProperty("Completeness").equals("random")) {
+        		randomStrings.add(RandomFuzzer.getRandomString());
+        	}
+        	
+        	for(String randomString : randomStrings) {
+	            // basic fuzzed url with just this param
+	            String urlFuzzed = page.getUnescapedPageURL() + "?" + urlParam
+	                    + "=" + randomString;
+	            checkFuzzedURLWithParams(urlFuzzed, webClient);
+	
+	            // test every possible combination of url parameters
+	            if (properties.getProperty("FullUrlParamFuzzing") != null
+	                    && Boolean.parseBoolean(properties
+	                            .getProperty("FullUrlParamFuzzing"))) {
+	            	fuzzAllPossibleURLParamCombos(urlCombinations, urlFuzzed, urlParam, randomString, webClient);
+	            }
+        	}
         }
+    }
+    
+    private static void fuzzAllPossibleURLParamCombos(List<String> urlCombinations, String urlFuzzed, String urlParam, String randomString, WebClient webClient) {
+    	List<String> newURLCombinations = new ArrayList<String>();
+        newURLCombinations.add(urlFuzzed);
+        for (String existingURL : urlCombinations) {
+            String modifiedURL = existingURL + "&" + urlParam + "=" + randomString;
+            checkFuzzedURLWithParams(modifiedURL, webClient);
+            newURLCombinations.add(modifiedURL);
+        }
+        urlCombinations.addAll(newURLCombinations);
     }
 
     private static void checkFuzzedURLWithParams(String urlWithParams,
