@@ -1,6 +1,7 @@
 BaseURI=http://vm549-03a.se.rit.edu/r1/Home/Index
 --BaseURI=http://www.se.rit.edu/
 --BaseURI=http://localhost:8080/bodgeit/
+LoginURI=https://www.facebook.com/login.php
 UserName=fuzzingyou@gmail.com
 Password=Fuzzing01You
 PageDiscovery=True
@@ -8,3 +9,4 @@ PageGuessing=False
 TimeDelaySec=0
 Completeness=full
 URIIterations=1
+FullUrlParamFuzzing=False

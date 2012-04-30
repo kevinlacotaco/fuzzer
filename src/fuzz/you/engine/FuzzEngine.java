@@ -3,6 +3,7 @@ package fuzz.you.engine;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import utils.FuzzVectors;
 import utils.ResultsProcessor;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
+import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
@@ -39,7 +41,7 @@ public class FuzzEngine {
             
             // for every page we found logged out, fuzz it
             for (FuzzyPage page : FuzzyCrawler.getFuzzyPageMap(false).values()) {
-            	fuzzURLParams(page);            	
+            	fuzzURLParams(page, webClient);            	
             	fuzzFormInputs(page);
             }
 
@@ -49,7 +51,7 @@ public class FuzzEngine {
             // for every page we found while logged in, fuzz it
             //  note that the webClient should still be logged in
             for (FuzzyPage page : FuzzyCrawler.getFuzzyPageMap(true).values()) {
-            	fuzzURLParams(page);
+            	fuzzURLParams(page, webClient);
             	fuzzFormInputs(page);
             }
         } catch (URISyntaxException e) {
@@ -75,25 +77,46 @@ public class FuzzEngine {
         }
     }
 
-    private static void fuzzURLParams(FuzzyPage page) {
-        loadProperties();
+    private static void fuzzURLParams(FuzzyPage page, WebClient webClient) {
+    	loadProperties();
 
-        List<String> urlCombinations = new ArrayList<String>();
+    	List<String> urlCombinations = new ArrayList<String>();
 
-        // for (String urlParam: page url parameters) {
-        // for(int i=0; i <
-        // Integer.parseInt(properties.getProperty("URIIterations")); i++) {
-        // // generate a random string for the uri
-        // random_string = stuff from kevin's method
-        //
-        // // basic fuzzed url with just this param
-        // String urlFuzzed = page.getUnescapedPageURL() + "?" + urlParam + "="
-        // + random_string
-        //
-        // // append this to every other URL for extensive testing
-        // }
-        // }
+    	for (String urlParam: page.getAllURLParams()) {
+    		// generate a random string for the uri
+    		String random_string = "asdf"; //TODO: get real random string
 
+			// basic fuzzed url with just this param
+			String urlFuzzed = page.getUnescapedPageURL() + "?" + urlParam + "=" + random_string;
+			checkFuzzedURLWithParams(urlFuzzed, webClient);
+			
+			// test every possible combination of url parameters
+			if(properties.getProperty("FullUrlParamFuzzing") != null && 
+					Boolean.parseBoolean(properties.getProperty("FullUrlParamFuzzing"))) {
+				List<String> newURLCombinations = new ArrayList<String>();
+				newURLCombinations.add(urlFuzzed);
+				for (String existingURL : urlCombinations) {
+					String modifiedURL = existingURL + "&" + urlParam + "=" + random_string;
+					checkFuzzedURLWithParams(modifiedURL, webClient);
+					newURLCombinations.add(modifiedURL);
+				}
+				
+				urlCombinations.addAll(newURLCombinations);
+			}
+    	}
+    }
+    
+    private static void checkFuzzedURLWithParams(String urlWithParams, WebClient webClient) {
+		try {
+			HtmlPage checkedPage = webClient.getPage(urlWithParams);
+			ResultsProcessor.process(checkedPage.asText());
+		} catch (FailingHttpStatusCodeException e) {
+			e.printStackTrace(); // TODO: if necessary, store results!
+		} catch (MalformedURLException e) {
+			e.printStackTrace(); // TODO: if necessary, store results!
+		} catch (IOException e) {
+			e.printStackTrace(); // TODO: if necessary, store results!
+		}
     }
 
     private static void fuzzFormInputs(FuzzyPage page) {
@@ -123,7 +146,6 @@ public class FuzzEngine {
     		try {
 				ResultsProcessor.process(submit.<HtmlPage> click().getWebResponse().getContentAsString());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
     	}
