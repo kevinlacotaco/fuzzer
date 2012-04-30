@@ -8,6 +8,10 @@ public class ResultsProcessor {
 		if(response.getStatusCode() > 399) {
 			FuzzyLogger.logError(response.getStatusCode() + ": " + response.getStatusMessage());
 		}
+		
+		if(response.getContentAsString().contains("error")) {
+			FuzzyLogger.logError("error suspected in HTML response: " + response.getContentAsString());
+		}
 	}
 	
 	

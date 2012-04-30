@@ -18,7 +18,7 @@ import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlInput;
+import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 
@@ -145,7 +145,7 @@ public class FuzzEngine {
     private static void fuzzFormInputs(FuzzyPage page) {
         for (FuzzyForm form : page.getAllForms()) {
             // try fuzzing one input at a time
-            for (HtmlInput input : form.getAllInputs()) {
+            for (HtmlElement input : form.getAllInputs()) {
                 // fuzz all items of each attack class
                 fuzzInputWithAllVectors(input, form.getSubmitButton());
             }
@@ -154,27 +154,28 @@ public class FuzzEngine {
             // R2?
         }
     }
-
-    private static void fuzzInputWithAllVectors(HtmlInput input,
-            HtmlSubmitInput submit) {
+    
+    private static void fuzzInputWithAllVectors(HtmlElement input,
+            List<HtmlSubmitInput> submits) {
         for (String vectorName : FuzzVectors.getAllVectorClasses()) {
-            fuzzInputWithStrings(input, submit,
+        	for(HtmlSubmitInput submit : submits) {
+        		fuzzInputWithStrings(input, submit,
                     FuzzVectors.getAttackClass(vectorName));
+        	}
         }
     }
 
-    private static void fuzzInputWithStrings(HtmlInput input,
+    private static void fuzzInputWithStrings(HtmlElement input,
             HtmlSubmitInput submit, String[] strings) {
         for (String randomInput : strings) {
-            input.setValueAttribute(randomInput);
-            try {
+            input.setAttribute("value", randomInput);
+        	try {
                 ResultsProcessor.processWebResponse(submit.<HtmlPage> click()
                         .getWebResponse());
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-
     }
 
 }

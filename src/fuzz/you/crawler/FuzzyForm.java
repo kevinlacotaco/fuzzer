@@ -12,6 +12,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlImageInput;
 import com.gargoylesoftware.htmlunit.html.HtmlInput;
 import com.gargoylesoftware.htmlunit.html.HtmlPasswordInput;
 import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
+import com.gargoylesoftware.htmlunit.html.HtmlTextArea;
 import com.gargoylesoftware.htmlunit.html.HtmlTextInput;
 import com.gargoylesoftware.htmlunit.javascript.NamedNodeMap;
 
@@ -32,9 +33,10 @@ public class FuzzyForm{
 //	private ArrayList<HtmlImageInput> imageInputs = new ArrayList<HtmlImageInput>();
 //	private ArrayList<HtmlPasswordInput> passwordInputs = new ArrayList<HtmlPasswordInput>();
 //	private ArrayList<HtmlTextInput> textInputs = new ArrayList<HtmlTextInput>();
+//	private ArrayList<HtmlTextArea> textAreaInputs = new ArrayList<HtmlTextArea>();
 	//------END FUTURE USE---------
 	
-	private ArrayList<HtmlInput> htmlInputs = new ArrayList<HtmlInput>();
+	private ArrayList<HtmlElement> htmlInputs = new ArrayList<HtmlElement>();
 	private ArrayList<HtmlSubmitInput> submitInputs = new ArrayList<HtmlSubmitInput>();
 	
 	/**
@@ -55,7 +57,7 @@ public class FuzzyForm{
 	 * 
 	 * @return list of HtmlInputs
 	 */
-	public List<HtmlInput> getAllInputs() {
+	public List<HtmlElement> getAllInputs() {
 		return htmlInputs;
 	}
 	
@@ -112,6 +114,9 @@ public class FuzzyForm{
 				
 			}else if(n instanceof HtmlSubmitInput){
 				submitInputs.add((HtmlSubmitInput)n);
+				
+			}else if(n instanceof HtmlTextArea) {
+				htmlInputs.add((HtmlTextArea)n);
 			}
 			
 			if (n.hasChildNodes()){
