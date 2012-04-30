@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Properties;
 
 import utils.FuzzVectors;
+import utils.RandomFuzzer;
 import utils.ResultsProcessor;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
@@ -91,7 +92,7 @@ public class FuzzEngine {
 
         for (String urlParam : page.getAllURLParamsNoValues()) {
             // generate a random string for the uri
-            String random_string = "asdf"; // TODO: get real random string
+            String random_string = RandomFuzzer.getRandomString();
 
             // basic fuzzed url with just this param
             String urlFuzzed = page.getUnescapedPageURL() + "?" + urlParam
@@ -146,7 +147,7 @@ public class FuzzEngine {
 
     private static void fuzzInputWithAllVectors(HtmlInput input,
             HtmlSubmitInput submit) {
-        for (String vectorName : FuzzVectors.getAllVectors()) {
+        for (String vectorName : FuzzVectors.getAllVectorClasses()) {
             fuzzInputWithStrings(input, submit,
                     FuzzVectors.getAttackClass(vectorName));
         }
