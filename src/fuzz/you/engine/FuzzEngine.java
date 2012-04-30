@@ -38,22 +38,23 @@ public class FuzzEngine {
         try {
             // scrape logged out
             FuzzyCrawler.generatePagesNotLoggedIn(properties, webClient);
+            System.out.println("Pages found not logged in:" + FuzzyCrawler.getFuzzyPageMap(false));
             
             // for every page we found logged out, fuzz it
             for (FuzzyPage page : FuzzyCrawler.getFuzzyPageMap(false).values()) {
             	fuzzURLParams(page, webClient);            	
             	fuzzFormInputs(page);
             }
-
-            // scrape logged in
-            FuzzyCrawler.generatePagesLoggedIn(properties, webClient);
             
-            // for every page we found while logged in, fuzz it
-            //  note that the webClient should still be logged in
-            for (FuzzyPage page : FuzzyCrawler.getFuzzyPageMap(true).values()) {
-            	fuzzURLParams(page, webClient);
-            	fuzzFormInputs(page);
-            }
+//            // scrape logged in
+//            FuzzyCrawler.generatePagesLoggedIn(properties, webClient);
+//            
+//            // for every page we found while logged in, fuzz it
+//            //  note that the webClient should still be logged in
+//            for (FuzzyPage page : FuzzyCrawler.getFuzzyPageMap(true).values()) {
+//            	fuzzURLParams(page, webClient);
+//            	fuzzFormInputs(page);
+//            }
         } catch (URISyntaxException e) {
             System.exit(1);
         }

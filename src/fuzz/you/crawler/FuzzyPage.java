@@ -78,7 +78,7 @@ public class FuzzyPage {
 	}
 	
 	public List<String> getAllURLParams() {
-		return null;
+		return new ArrayList<String>();
 	}
 	
 	public List<FuzzyForm> getAllForms() {
