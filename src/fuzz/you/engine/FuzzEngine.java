@@ -34,8 +34,8 @@ public class FuzzEngine {
             FuzzyCrawler.generatePagesLoggedIn(properties, webClient);
             
             
-            System.out.println(FuzzyCrawler.getFuzzyPageMap(false));
-            System.out.println(FuzzyCrawler.getFuzzyPageMap(true));
+            //System.out.println(FuzzyCrawler.getFuzzyPageMap(false));
+            //System.out.println(FuzzyCrawler.getFuzzyPageMap(true));
         } catch (URISyntaxException e) {
             System.exit(1);
         }

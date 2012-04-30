@@ -6,10 +6,18 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 
 import com.gargoylesoftware.htmlunit.DefaultCredentialsProvider;
+import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlInput;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.html.HtmlPasswordInput;
+import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
+import com.gargoylesoftware.htmlunit.html.HtmlTextInput;
 
 
 public class FuzzyCrawler {
@@ -40,14 +48,50 @@ public class FuzzyCrawler {
 	
 	public static void generatePagesLoggedIn(Properties properties,
             WebClient webClient) throws URISyntaxException {
-        DefaultCredentialsProvider credentialsProvider = (DefaultCredentialsProvider) webClient
-                .getCredentialsProvider();
-        credentialsProvider.addCredentials(
-                properties.getProperty("UserName"),
-                properties.getProperty("Password"));
-        URI baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
-
         System.out.println("Added credntials");
+        
+        try {
+	        webClient.setJavaScriptEnabled(false);
+	        HtmlPage page1 = webClient.getPage("http://www.facebook.com");
+	        HtmlForm form = page1.getForms().get(0);
+	        HtmlSubmitInput button = (HtmlSubmitInput) form.getInputsByValue("Log In").get(0);
+	        HtmlTextInput textField = form.getInputByName("email");
+	        textField.setValueAttribute(properties.getProperty("UserName"));
+	        HtmlPasswordInput textField2 = form.getInputByName("pass");
+	        textField2.setValueAttribute(properties.getProperty("Password"));
+			HtmlPage newindex = button.click();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+        
+        webClient.setJavaScriptEnabled(true);
+//        DefaultCredentialsProvider credentialsProvider = (DefaultCredentialsProvider) webClient
+//                .getCredentialsProvider();
+//        credentialsProvider.addCredentials(
+//                properties.getProperty("UserName"),
+//                properties.getProperty("Password"));
+//        
+//		try {
+//			HtmlPage loginPage = webClient.getPage(properties.getProperty("LoginURI"));
+//	        List<HtmlForm> forms = loginPage.getForms();
+//	        for (HtmlForm form : forms) {
+//	                HtmlInput username = form.getInputByName("email");
+//	                username.setValueAttribute(properties.getProperty("UserName"));
+//	                HtmlInput password = form.getInputByName("pass");
+//	                password.setValueAttribute(properties.getProperty("Password"));
+//	                
+//	                HtmlSubmitInput submit = (HtmlSubmitInput) form.getFirstByXPath("//input[@type='submit']");
+//	                System.out.println(submit.<HtmlPage> click().getWebResponse().getContentAsString());
+//	        }
+//		} catch (FailingHttpStatusCodeException e) {
+//			e.printStackTrace();
+//		} catch (MalformedURLException e) {
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+        
+        URI baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
         generatePages(baseURI, webClient, true);
     }
 	
@@ -64,7 +108,6 @@ public class FuzzyCrawler {
 					
 					//Check if it has been scraped already.
 					if (!mapForPagesFoundByLoginStatus.get(loggedIn).containsKey(uri)) {
-						System.out.println("URI: " + pageURI);
 						generatePages(uri, webClient, loggedIn);
 					}
 				}
