@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Properties;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
+import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.WebClient;
 
 import fuzz.you.crawler.FuzzyCrawler;
@@ -22,6 +23,9 @@ public class FuzzEngine {
         // create web client
         WebClient webClient = new WebClient(BrowserVersion.FIREFOX_3_6);
         webClient.setJavaScriptEnabled(true);
+        webClient.setThrowExceptionOnScriptError(false);
+        webClient
+                .setAjaxController(new NicelyResynchronizingAjaxController());
 
         loadProperties();
 
@@ -32,10 +36,9 @@ public class FuzzEngine {
 
             // scrape logged in
             FuzzyCrawler.generatePagesLoggedIn(properties, webClient);
-            
-            
-            //System.out.println(FuzzyCrawler.getFuzzyPageMap(false));
-            //System.out.println(FuzzyCrawler.getFuzzyPageMap(true));
+
+            // System.out.println(FuzzyCrawler.getFuzzyPageMap(false));
+            // System.out.println(FuzzyCrawler.getFuzzyPageMap(true));
         } catch (URISyntaxException e) {
             System.exit(1);
         }

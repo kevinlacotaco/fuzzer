@@ -1,8 +1,11 @@
-BaseURI=http://vm549-03a.se.rit.edu/r1/Home/Index
+--BaseURI=http://vm549-03a.se.rit.edu/r1/Home/Index
 --BaseURI=http://www.se.rit.edu/
---BaseURI=http://localhost:8080/bodgeit/
-UserName=fuzzingyou@gmail.com
-Password=Fuzzing01You
+BaseURI=http://localhost:8080/bodgeit/
+LoginURI=http://localhost:8080/bodgeit/login.jsp
+--UserName=fuzzingyou@gmail.com
+--Password=Fuzzing01You
+UserName=test123@something.com
+Password=test123
 PageDiscovery=True
 PageGuessing=False
 TimeDelaySec=0
