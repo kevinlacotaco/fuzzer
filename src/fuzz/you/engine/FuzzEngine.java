@@ -8,10 +8,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import utils.FuzzVectors;
+import utils.ResultsProcessor;
+
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlInput;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 
 import fuzz.you.crawler.FuzzyCrawler;
+import fuzz.you.crawler.FuzzyForm;
 import fuzz.you.crawler.FuzzyPage;
 
 public class FuzzEngine {
@@ -29,28 +36,25 @@ public class FuzzEngine {
         try {
             // scrape logged out
             FuzzyCrawler.generatePagesNotLoggedIn(properties, webClient);
+            
+            // for every page we found logged out, fuzz it
+            for (FuzzyPage page : FuzzyCrawler.getFuzzyPageMap(false).values()) {
+            	fuzzURLParams(page);            	
+            	fuzzFormInputs(page);
+            }
 
             // scrape logged in
             FuzzyCrawler.generatePagesLoggedIn(properties, webClient);
             
-            
-            //System.out.println(FuzzyCrawler.getFuzzyPageMap(false));
-            //System.out.println(FuzzyCrawler.getFuzzyPageMap(true));
+            // for every page we found while logged in, fuzz it
+            //  note that the webClient should still be logged in
+            for (FuzzyPage page : FuzzyCrawler.getFuzzyPageMap(true).values()) {
+            	fuzzURLParams(page);
+            	fuzzFormInputs(page);
+            }
         } catch (URISyntaxException e) {
             System.exit(1);
         }
-
-        // Now that we have the pages and their inputs, fuzz them
-        // if(properties.getProperty("Completeness").equals("full")) {
-        // for (URI key: siteURIs) {
-        // FuzzyPage page = fuzzyPageMap.get(key);
-        // FuzzEngine.fuzzURLParams(page);
-        // FuzzEngine.fuzzFormInputs(page);
-        // }
-        // } else if(properties.getProperty("Completeness") == "random") {
-        //
-        // }
-
     }
 
     private static void loadProperties() {
@@ -71,7 +75,7 @@ public class FuzzEngine {
         }
     }
 
-    public static void fuzzURLParams(FuzzyPage page) {
+    private static void fuzzURLParams(FuzzyPage page) {
         loadProperties();
 
         List<String> urlCombinations = new ArrayList<String>();
@@ -92,9 +96,38 @@ public class FuzzEngine {
 
     }
 
-    public static void fuzzFormInputs(FuzzyPage page) {
+    private static void fuzzFormInputs(FuzzyPage page) {
         loadProperties();
-
+        for (FuzzyForm form : page.getAllForms()) {
+        	// try fuzzing one input at a time
+        	for (HtmlInput input : form.getAllInputs()) {
+        		// fuzz all items of each attack class
+        		fuzzInputWithAllVectors(input, form.getSubmitButton());
+        	}
+        	
+        	// try fuzzing combinations of inputs
+        	  // R2?
+        }
     }
+    
+    
+    private static void fuzzInputWithAllVectors(HtmlInput input, HtmlSubmitInput submit) {
+    	for(String vectorName : FuzzVectors.getAllVectors()) {
+    		fuzzInputWithStrings(input, submit, FuzzVectors.getAttackClass(vectorName));
+    	}
+    }
+    
+    private static void fuzzInputWithStrings(HtmlInput input, HtmlSubmitInput submit, String[] strings) {
+    	for(String randomInput : strings) {
+    		input.setValueAttribute(randomInput);
+    		try {
+				ResultsProcessor.process(submit.<HtmlPage> click().getWebResponse().getContentAsString());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
+    }
+    
 
 }
