@@ -10,6 +10,11 @@ public class ResultsProcessor {
                     + response.getStatusMessage());
         }
 
+        if (response.getContentAsString().contains("error")) {
+            FuzzyLogger.logError("error suspected in HTML response: "
+                    + response.getContentAsString());
+        }
+
         for (String sensativeString : SensativeData.getSensativeData()) {
             if (response.getContentAsString().contains(sensativeString)) {
                 FuzzyLogger.logError("Found Sensative Data: "
