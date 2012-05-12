@@ -64,6 +64,9 @@ public class FuzzEngine {
                 fuzzURLParams(page, webClient);
                 fuzzFormInputs(page);
             }
+            
+            FuzzyLogger.outputAttackSurface();
+            
         } catch (URISyntaxException e) {
             System.exit(1);
         }
@@ -102,9 +105,9 @@ public class FuzzEngine {
         	
         	for(String randomString : randomStrings) {
 	            // basic fuzzed url with just this param
-	            String urlFuzzed = page.getUnescapedPageURL() + "?" + urlParam
-	                    + "=" + randomString;
-	            checkFuzzedURLWithParams(urlFuzzed, webClient);
+        		String baseUrl = page.getUnescapedPageURL() + "?" + urlParam;
+	            String urlFuzzed = baseUrl + "=" + randomString;
+	            checkFuzzedURLWithParams(baseUrl, urlFuzzed, webClient);
 	
 	            // test every possible combination of url parameters
 	            if (properties.getProperty("FullUrlParamFuzzing") != null
@@ -121,23 +124,31 @@ public class FuzzEngine {
         newURLCombinations.add(urlFuzzed);
         for (String existingURL : urlCombinations) {
             String modifiedURL = existingURL + "&" + urlParam + "=" + randomString;
-            checkFuzzedURLWithParams(modifiedURL, webClient);
+            checkFuzzedURLWithParams(modifiedURL, modifiedURL, webClient); // THIS WONT LOG PROPERLY!
             newURLCombinations.add(modifiedURL);
         }
         urlCombinations.addAll(newURLCombinations);
     }
 
-    private static void checkFuzzedURLWithParams(String urlWithParams,
+    private static void checkFuzzedURLWithParams(String baseUrl, String urlWithParams,
             WebClient webClient) {
         try {
+        	ResultsProcessor.setLastInput(urlWithParams);
             HtmlPage checkedPage = webClient.getPage(urlWithParams);
-            ResultsProcessor.processWebResponse(checkedPage.getWebResponse());
+            ResultsProcessor.processWebResponse(checkedPage.getWebResponse(), false, "");
         } catch (FailingHttpStatusCodeException e) {
-        	FuzzyLogger.logError(e.getMessage());
+        	if(Boolean.parseBoolean(properties.getProperty("Log400"))) {
+        		String key = baseUrl+"::FailingHttpStatusCode::";
+        		ResultsProcessor.logError(key, key+e.getMessage());
+        	}
         } catch (MalformedURLException e) {
-        	FuzzyLogger.logError(e.getMessage());
+        	String key = baseUrl+"::MalformedUrl::";
+        	ResultsProcessor.logError(key, key+e.getMessage());
         } catch (IOException e) {
-        	FuzzyLogger.logError(e.getMessage());
+        	if(Boolean.parseBoolean(properties.getProperty("LogBadURI"))) {
+        		String key = baseUrl+"::IO Exception::";
+        		ResultsProcessor.logError(key, key+e.getMessage());
+        	}
         }
 
     }
@@ -160,18 +171,25 @@ public class FuzzEngine {
         for (String vectorName : FuzzVectors.getAllVectorClasses()) {
         	for(HtmlSubmitInput submit : submits) {
         		fuzzInputWithStrings(input, submit,
-                    FuzzVectors.getAttackClass(vectorName));
+                    FuzzVectors.getAttackClass(vectorName), vectorName);
         	}
         }
     }
 
     private static void fuzzInputWithStrings(HtmlElement input,
-            HtmlSubmitInput submit, String[] strings) {
+            HtmlSubmitInput submit, String[] strings, String attackVector) {
         for (String randomInput : strings) {
-            input.setAttribute("value", randomInput);
-        	try {
+        	ResultsProcessor.setLastInput(input.getAttribute("name") + "=" + randomInput);
+        	ResultsProcessor.setLastInputName(input.getAttribute("name"));
+            
+        	input.setAttribute("value", randomInput);
+            try {
+            	boolean noErrorIsError = false;
+            	if(attackVector.equals("xss") || attackVector.equals("activeSQL") || attackVector.equals("passiveSQL")) {
+            		noErrorIsError = true;
+            	}
                 ResultsProcessor.processWebResponse(submit.<HtmlPage> click()
-                        .getWebResponse());
+                        .getWebResponse(), noErrorIsError, attackVector);
             } catch (IOException e) {
                 e.printStackTrace();
             }
