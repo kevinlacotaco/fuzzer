@@ -62,7 +62,7 @@ public class ResultsProcessor {
 			}
 		} else {
 			if(noErrorIsError) {
-				key += "::" + attackVector;
+				key += "::" + attackVector + "::";
 				if(!wasAlreadyFound(key)){
 					FuzzyLogger.logError(key + lastInput + "::response time==" + response.getLoadTime() + "ms:: NO SYSTEM ERROR when expected for attack vector: " + attackVector);
 					alreadyLogged.add(key);

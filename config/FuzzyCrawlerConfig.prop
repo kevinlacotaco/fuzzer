@@ -2,6 +2,7 @@
 # BaseURI=http://www.se.rit.edu/
 BaseURI=http://localhost:8080/bodgeit/
 LoginURI=http://localhost:8080/bodgeit/login.jsp
+LogoutURI=http://localhost:8080/bodgeit/logout.jsp
 UserName=test123@something.com
 Password=test123
 # LoginURI=https://www.facebook.com/login.php

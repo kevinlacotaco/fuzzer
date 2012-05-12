@@ -58,7 +58,9 @@ public class FuzzyLogger {
 					System.out.println("         input: " + input.getAttribute("name"));
 				}
 			}
+			System.out.println();
 		}
+
 	}
 	
 }

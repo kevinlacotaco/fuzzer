@@ -41,61 +41,112 @@ public class FuzzEngine {
         System.getProperties().put(
                 "org.apache.commons.logging.simplelog.defaultlog", "error");
 
-        // create web client
+        loadProperties();
+        pageDiscovery();
+    }
+    
+    private static void pageDiscovery(){
+    	// create web client
         WebClient webClient = new WebClient(BrowserVersion.FIREFOX_3_6);
         webClient.setJavaScriptEnabled(true);
         webClient.setThrowExceptionOnScriptError(false);
         webClient.setPrintContentOnFailingStatusCode(false);
-        webClient
-                .setAjaxController(new NicelyResynchronizingAjaxController());
-
-        loadProperties();
-
-        // scrape to find pages
-        try {
-            // scrape logged out
-            FuzzyCrawler.generatePagesNotLoggedIn(properties, webClient);
-
-            // for every page we found logged out, fuzz it
-            for (FuzzyPage page : FuzzyCrawler.getFuzzyPageMap(false)
-                    .values()) {
-                fuzzURLParams(page, webClient);
-                fuzzFormInputs(page);
-            }
-            
-            // try guessing usernames and passwords
-            if(Boolean.parseBoolean(properties.getProperty("PasswordGuessing"))) {
-            	System.out.println("Guessing Passwords");
-            	String[] usernames = FuzzVectors.getAttackClass("usernames");
-            	String[] passwords = FuzzVectors.getAttackClass("passwords");
-            	String uri = properties.getProperty("LoginURI");
-            	
-            	for(String username : usernames) {
-            		for(String password : passwords) {
-            			FuzzyCrawler.login(webClient, uri, username, password, true);
-            		}
-            	}
-            }
-
-            // scrape logged in
-            FuzzyCrawler.generatePagesLoggedIn(properties, webClient);
-            
-            // dump discovered URIs to file as serialized data
-            FuzzyCrawler.dumpDiscoveredURIsToFile();
-
-            // for every page we found while logged in, fuzz it
-            // note that the webClient should still be logged in
-            for (FuzzyPage page : FuzzyCrawler.getFuzzyPageMap(true).values()) {
-                fuzzURLParams(page, webClient);
-                fuzzFormInputs(page);
-            }
-            
-            FuzzyLogger.outputAttackSurface();
-            
-        } catch (URISyntaxException e) {
-            System.exit(1);
+        webClient.setAjaxController(new NicelyResynchronizingAjaxController());
+        
+        if (properties.getProperty("PageDiscovery").equals("True")) {
+            try {
+            	// scrape logged out
+				FuzzyCrawler.generatePagesNotLoggedIn(properties, webClient);
+				
+				// scrape logged in
+	            FuzzyCrawler.generatePagesLoggedIn(properties, webClient);
+	            
+	            // dump discovered URIs to file as serialized data
+	            FuzzyCrawler.dumpDiscoveredURIsToFile();
+	            
+			} catch (URISyntaxException e) {
+	            systemExit();
+	        }
+        }else{
+	        try{
+	        	FuzzyCrawler.loadURIsFromFile();
+	        	
+	        }catch(FileNotFoundException fnfe){
+	     	   System.err.println("WARN: -----------------------------------------");
+	     	   System.err.println("WARN: The file '" + FuzzyCrawler.URI_FILE + "' wansn't found.\n");
+	     	   System.err.println("WARN: If this is the first time running this application,");
+	     	   System.err.println("WARN: be sure page discovery has been set to 'True' in the");
+	     	   System.err.println("WARN: property configuration file.\n");
+	     	   System.err.println("WARN: Nothing to import.");
+	     	   System.err.println("WARN: -----------------------------------------");
+	     	   
+	     	   try {
+	 			Thread.sleep(5000);
+	 			
+	     	   }catch (InterruptedException e) {
+		 			System.err.println("WARN: -----------------------------------------");
+		 	    	System.err.println("WARN: Thread sleep error");
+		 	    	e.printStackTrace();
+		 	    	System.err.println("WARN: -----------------------------------------");
+	     	   }
+	     	   systemExit();
+	        }
         }
-
+        	
+        //fuzz logged out pages
+        System.out.println("Fuzzing pages while not logged in.");
+        fuzzPages(webClient, false);
+        
+        // try guessing usernames and passwords
+        if(Boolean.parseBoolean(properties.getProperty("PasswordGuessing"))) {
+        	System.out.println("Guessing Passwords");
+        	String[] usernames = FuzzVectors.getAttackClass("usernames");
+        	String[] passwords = FuzzVectors.getAttackClass("passwords");
+        	String uri = properties.getProperty("LoginURI");
+        	
+        	for(String username : usernames) {
+        		for(String password : passwords) {
+        			FuzzyCrawler.login(webClient, uri, username, password, true);
+        		}
+        	}
+        }
+        
+        //fuzz logged in pages
+        System.out.println("Fuzzing pages while logged in.");
+        fuzzPages(webClient, true);
+        
+        FuzzyLogger.outputAttackSurface();
+    }
+    
+    private static void systemExit(){
+    	System.exit(1);
+    }
+    
+    private static void fuzzPages(WebClient webClient, Boolean loggedIn){
+    	// for every page we found while logged in, fuzz it
+    	// note that the webClient should still be logged in if loggedIn is TRUE.
+    	if(loggedIn) {
+    		FuzzyCrawler.webClientLogin(properties, webClient);
+    	} else {
+    		try {
+	        	HtmlPage page = webClient.getPage(properties.getProperty("LogoutURI"));
+				page.getWebResponse();
+			} catch (FailingHttpStatusCodeException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+    	}
+    	
+    	for (FuzzyPage page : FuzzyCrawler.getFuzzyPageMap(loggedIn).values()) {
+        	fuzzURLParams(page, webClient);
+        	fuzzFormInputs(page);
+    	}
     }
 
     private static void loadProperties() {
@@ -190,7 +241,6 @@ public class FuzzEngine {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
     }
 
     private static void fuzzFormInputs(FuzzyPage page) {

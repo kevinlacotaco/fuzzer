@@ -1,8 +1,11 @@
 package fuzz.you.crawler;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -25,21 +28,17 @@ public class FuzzyCrawler {
 	/**
 	 * A set containing all of the pages found on the system.
 	 */
-	private static HashMap<URI, FuzzyPage> fuzzyPageMap = new HashMap<URI, FuzzyPage>();
-	private static HashMap<URI, FuzzyPage> loggedinFuzzyPageMap = new HashMap<URI, FuzzyPage>();
 	private static HashMap<Boolean, HashMap<URI, FuzzyPage>> mapForPagesFoundByLoginStatus = new HashMap<Boolean, HashMap<URI, FuzzyPage>>();
-
+	
 	static {
-		mapForPagesFoundByLoginStatus.put(false, fuzzyPageMap);
-		mapForPagesFoundByLoginStatus.put(true, loggedinFuzzyPageMap);
+		mapForPagesFoundByLoginStatus.put(false, new HashMap<URI, FuzzyPage>());
+		mapForPagesFoundByLoginStatus.put(true, new HashMap<URI, FuzzyPage>());
 	}
+	
+	public static  final String URI_FILE = "DiscoveredURIs.crawl";
 
 	public static HashMap<URI, FuzzyPage> getFuzzyPageMap(boolean loggedIn) {
-		if (loggedIn) {
-			return loggedinFuzzyPageMap;
-		} else {
-			return fuzzyPageMap;
-		}
+		return mapForPagesFoundByLoginStatus.get(loggedIn);
 	}
 
     public static void generatePagesNotLoggedIn(Properties properties, WebClient webClient) throws URISyntaxException {
@@ -65,25 +64,15 @@ public class FuzzyCrawler {
         }
     }
 
-    public static void generatePagesLoggedIn(Properties properties, WebClient webClient) throws URISyntaxException {
-        System.out.println("Added credentials");
-
-        DefaultCredentialsProvider prov = (DefaultCredentialsProvider) webClient.getCredentialsProvider();
-        prov.addCredentials(properties.getProperty("UserName"), properties.getProperty("Password"));
-
-		webClient.setCredentialsProvider(prov);
-
-        login(webClient, properties.getProperty("LoginURI"), properties.getProperty("UserName"),
-                properties.getProperty("Password"), false);
-
-		webClient.setJavaScriptEnabled(true);
-
-        Long delay = Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000;
-
-        URI baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
-        generatePages(baseURI, webClient, true, delay);
-
-        Boolean guessed = Boolean.parseBoolean(properties.getProperty("PageGuessing"));
+	public static void generatePagesLoggedIn(Properties properties,	WebClient webClient) throws URISyntaxException {
+		webClientLogin(properties, webClient);
+		
+		URI baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
+		Long delay = Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000;
+		
+		generatePages(baseURI, webClient, true, delay);
+		
+		Boolean guessed = Boolean.parseBoolean(properties.getProperty("PageGuessing"));
 
         if (guessed) {
             for (String potentialPage : FuzzVectors.getCommonPages()) {
@@ -94,10 +83,26 @@ public class FuzzyCrawler {
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 }
-
             }
         }
-    }
+	}
+
+	public static void webClientLogin(Properties properties, WebClient webClient){
+		
+		DefaultCredentialsProvider prov = (DefaultCredentialsProvider) webClient
+				.getCredentialsProvider();
+		prov.addCredentials(properties.getProperty("UserName"),
+				properties.getProperty("Password"));
+		
+		webClient.setCredentialsProvider(prov);
+		
+		login(webClient, properties.getProperty("LoginURI"),
+				properties.getProperty("UserName"),
+				properties.getProperty("Password"),
+				false);
+		
+		webClient.setJavaScriptEnabled(true);
+	}
 
     public static void login(WebClient webClient, String uri, String username, String password, boolean isGuessing) {
 
@@ -166,7 +171,7 @@ public class FuzzyCrawler {
 
 	public static void dumpDiscoveredURIsToFile() {
 		try {
-			File urisFile = new File("DiscoveredURIs.crawl");
+			File urisFile = new File(URI_FILE);
 			FileOutputStream fos = new FileOutputStream(urisFile);
 			ObjectOutputStream oos = new ObjectOutputStream(fos);
 			oos.writeObject(mapForPagesFoundByLoginStatus);
@@ -174,6 +179,21 @@ public class FuzzyCrawler {
 			fos.close();
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
+		}
+	}
+	
+	public static void loadURIsFromFile() throws FileNotFoundException{
+       FileInputStream fis = new FileInputStream(URI_FILE);
+       ObjectInputStream ois;
+		try {
+			ois = new ObjectInputStream(fis);
+			mapForPagesFoundByLoginStatus = (HashMap<Boolean, HashMap<URI, FuzzyPage>>) ois.readObject();
+			ois.close();
+			fis.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
 		}
 	}
 
