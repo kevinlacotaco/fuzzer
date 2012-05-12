@@ -146,6 +146,11 @@ public class FuzzVectors {
             "mysql", " ", "oracle", "tomcat6", "www-data", "www", "log",
             "apache", "email", "test" };
 
+    private static String commonPages[] = { "index", "admin", "users",
+            "user", "administrator", "about ", "faq", "contact", "news",
+            "login", "home", "blog", "feed", "images", "pages", "catalog",
+            "resources", "customer", "articles" };
+
     static {
         allVectors.add(activeSQLInjectAttacks);
         allVectors.add(bufferOverflowAttacks);
@@ -204,6 +209,10 @@ public class FuzzVectors {
         }
 
         return null;
+    }
+
+    public static String[] getCommonPages() {
+        return commonPages;
     }
 
 }

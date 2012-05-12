@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
+import java.util.Stack;
 
 import utils.FuzzVectors;
 import utils.FuzzyLogger;
@@ -31,8 +33,12 @@ import fuzz.you.crawler.FuzzyPage;
 public class FuzzEngine {
 
     private static Properties properties;
+    private static Random random;
+    private static ArrayList<String> allVectorStrings = (ArrayList<String>) FuzzVectors.getAllVectorStrings();
 
     public static void main(String[] args) {
+    	random = new Random();
+    	
         System.getProperties().put(
                 "org.apache.commons.logging.simplelog.defaultlog", "error");
 
@@ -131,35 +137,27 @@ public class FuzzEngine {
 
         for (String urlParam : page.getAllURLParamsNoValues()) {
             // generate a random string for the uri
-            List<String> randomStrings = new ArrayList<String>();
-            if (properties.getProperty("Completeness").equals("full")) {
-                randomStrings = FuzzVectors.getAllVectorStrings();
-            } else if (properties.getProperty("Completeness")
-                    .equals("random")) {
-                randomStrings.add(RandomFuzzer.getRandomString());
-            }
-
-            for (String randomString : randomStrings) {
-                // basic fuzzed url with just this param
-                String pageToFuzz = page.getUnescapedPageURL();
-                if (pageToFuzz.endsWith("/")) {
-                    pageToFuzz = pageToFuzz.substring(0,
-                            pageToFuzz.length() - 1);
-                }
-
-                String urlFuzzed = pageToFuzz + "?" + urlParam + "="
-                        + randomString;
-
-                checkFuzzedURLWithParams(urlFuzzed, webClient);
-
-                // test every possible combination of url parameters
-                if (properties.getProperty("FullUrlParamFuzzing") != null
-                        && Boolean.parseBoolean(properties
-                                .getProperty("FullUrlParamFuzzing"))) {
-                    fuzzAllPossibleURLParamCombos(urlCombinations, urlFuzzed,
-                            urlParam, randomString, webClient);
-                }
-            }
+        	List<String> randomStrings = new ArrayList<String>();
+        	if(properties.getProperty("Completeness").equals("full")) {
+        		randomStrings = allVectorStrings;
+        	}
+        	else if(properties.getProperty("Completeness").equals("random")) {
+        		randomStrings.add(RandomFuzzer.getRandomString());
+        	}
+        	
+        	for(String randomString : randomStrings) {
+	            // basic fuzzed url with just this param
+        		String baseUrl = page.getUnescapedPageURL() + "?" + urlParam;
+	            String urlFuzzed = baseUrl + "=" + randomString;
+	            checkFuzzedURLWithParams(baseUrl, urlFuzzed, webClient);
+	
+	            // test every possible combination of url parameters
+	            if (properties.getProperty("FullUrlParamFuzzing") != null
+	                    && Boolean.parseBoolean(properties
+	                            .getProperty("FullUrlParamFuzzing"))) {
+	            	fuzzAllPossibleURLParamCombos(urlCombinations, urlFuzzed, urlParam, randomString, webClient);
+	            }
+        	}
         }
     }
 
@@ -170,29 +168,37 @@ public class FuzzEngine {
         newURLCombinations.add(urlFuzzed);
 
         for (String existingURL : urlCombinations) {
+            String modifiedURL = existingURL + "&" + urlParam + "=" + randomString;
+            checkFuzzedURLWithParams(modifiedURL, modifiedURL, webClient); // THIS WONT LOG PROPERLY!
+            newURLCombinations.add(modifiedURL);
             if (!existingURL.contains(urlParam)) {
-                String modifiedURL = existingURL + "&" + urlParam + "="
-                        + randomString;
-                checkFuzzedURLWithParams(modifiedURL, webClient);
+                checkFuzzedURLWithParams(modifiedURL, modifiedURL, webClient);
                 newURLCombinations.add(modifiedURL);
             }
         }
         urlCombinations.addAll(newURLCombinations);
     }
 
-    private static void checkFuzzedURLWithParams(String urlWithParams,
+    private static void checkFuzzedURLWithParams(String baseUrl, String urlWithParams,
             WebClient webClient) {
         try {
+        	ResultsProcessor.setLastInput(urlWithParams);
             HtmlPage checkedPage = webClient.getPage(urlWithParams);
-            ResultsProcessor.processWebResponse(checkedPage.getWebResponse());
-            Thread.sleep(Long.parseLong(properties
-                    .getProperty("TimeDelaySec")) * 1000);
+            ResultsProcessor.processWebResponse(checkedPage.getWebResponse(), false, "");
+            Thread.sleep(Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000);
         } catch (FailingHttpStatusCodeException e) {
-            FuzzyLogger.logError(e.getMessage());
+        	if(Boolean.parseBoolean(properties.getProperty("Log400"))) {
+        		String key = baseUrl+"::FailingHttpStatusCode::";
+        		ResultsProcessor.logError(key, key+e.getMessage());
+        	}
         } catch (MalformedURLException e) {
-            FuzzyLogger.logError(e.getMessage());
+        	String key = baseUrl+"::MalformedUrl::";
+        	ResultsProcessor.logError(key, key+e.getMessage());
         } catch (IOException e) {
-            FuzzyLogger.logError(e.getMessage());
+        	if(Boolean.parseBoolean(properties.getProperty("LogBadURI"))) {
+        		String key = baseUrl+"::IO Exception::";
+        		ResultsProcessor.logError(key, key+e.getMessage());
+        	}
         } catch (NumberFormatException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -210,40 +216,73 @@ public class FuzzEngine {
                 fuzzInputWithAllVectors(input, form.getSubmitButton());
             }
 
-            // try fuzzing combinations of inputs
-            // R2?
+            // fuzz all inputs at once!
+            for(int i=0; i<Integer.parseInt(properties.getProperty("FullFormFuzzLoops")); i++) {
+            	fuzzAllInputsRandomly(form);
+            }
         }
+    }
+    
+    private static void fuzzAllInputsRandomly(FuzzyForm form) { 
+    	for(HtmlSubmitInput submit : form.getSubmitButton()) {
+	    	String fuzzedInputNames = "";
+	    	String fuzzedInputs = "";
+	    	for(HtmlElement input : form.getAllInputs()) {
+	    		String inputName = input.getAttribute("name") + ";";
+	    		fuzzedInputNames += inputName;
+	    		
+	    		String fuzzedValue = allVectorStrings.get(random.nextInt(allVectorStrings.size()));
+	    		fuzzedInputs += inputName + "=" + fuzzedValue + ";";
+	    		input.setAttribute("value", fuzzedValue);
+	    	}
+	    	ResultsProcessor.setLastInputName(fuzzedInputNames);
+	    	ResultsProcessor.setLastInput(fuzzedInputs);
+	    	submitForm(submit, "");
+    	}
+
     }
 
     private static void fuzzInputWithAllVectors(HtmlElement input,
             List<HtmlSubmitInput> submits) {
         for (String vectorName : FuzzVectors.getAllVectorClasses()) {
-            for (HtmlSubmitInput submit : submits) {
-                fuzzInputWithStrings(input, submit,
-                        FuzzVectors.getAttackClass(vectorName));
-            }
+        	for(HtmlSubmitInput submit : submits) {
+        		fuzzInputWithStrings(input, submit,
+                    FuzzVectors.getAttackClass(vectorName), vectorName);
+        	}
         }
     }
 
     private static void fuzzInputWithStrings(HtmlElement input,
-            HtmlSubmitInput submit, String[] strings) {
+            HtmlSubmitInput submit, String[] strings, String attackVector) {
         for (String randomInput : strings) {
-            input.setAttribute("value", randomInput);
-            try {
-                ResultsProcessor.processWebResponse(submit.<HtmlPage> click()
-                        .getWebResponse());
-                Thread.sleep(Long.parseLong(properties
-                        .getProperty("TimeDelaySec")) * 1000);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (NumberFormatException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+        	ResultsProcessor.setLastInput(input.getAttribute("name") + "=" + randomInput);
+        	ResultsProcessor.setLastInputName(input.getAttribute("name"));
+        	input.setAttribute("value", randomInput);
+        	
+        	submitForm(submit, attackVector);
         }
     }
 
+    private static void submitForm(HtmlSubmitInput submit, String attackVector) {
+    	try {
+	    	Thread.sleep(Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000);
+	    	
+	    	boolean noErrorIsError = false;
+	    	if(attackVector.equals("xss") || attackVector.equals("activeSQL") || attackVector.equals("passiveSQL")) {
+	    		noErrorIsError = true;
+	    	}
+	        ResultsProcessor.processWebResponse(submit.<HtmlPage> click()
+	                .getWebResponse(), noErrorIsError, attackVector);
+	
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    } catch (NumberFormatException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+	    } catch (InterruptedException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+	    }
+    }
+    
 }

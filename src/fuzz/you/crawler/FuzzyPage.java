@@ -19,11 +19,12 @@ import com.gargoylesoftware.htmlunit.util.UrlUtils;
 @SuppressWarnings("serial")
 public class FuzzyPage implements Serializable {
 
-	private Page fuzzyPage;
+    private Page fuzzyPage;
     private URI baseURI;
     private HashSet<URI> fuzzyPageURIsSet;
     private List<FuzzyForm> fuzzyPageForms;
     private Map<String, List<String>> urlParams;
+    private boolean guessed;
 
     protected FuzzyPage(Page page) {
 
@@ -31,6 +32,7 @@ public class FuzzyPage implements Serializable {
         fuzzyPageForms = new ArrayList<FuzzyForm>();
         fuzzyPageURIsSet = new HashSet<URI>();
         urlParams = new HashMap<String, List<String>>();
+        guessed = false;
 
         try {
             baseURI = fuzzyPage.getUrl().toURI();
@@ -43,6 +45,14 @@ public class FuzzyPage implements Serializable {
 
         // TODO: Determine if needed
         // Map<String, String> namespaces = fuzzyPage.getNamespaces();
+    }
+
+    public void setGuessed(boolean guessed) {
+        this.guessed = guessed;
+    }
+
+    public boolean getGuessed() {
+        return guessed;
     }
 
     // private void debugging(){

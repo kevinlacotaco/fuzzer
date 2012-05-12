@@ -10,8 +10,11 @@ import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Properties;
+
+import utils.FuzzVectors;
 
 import com.gargoylesoftware.htmlunit.DefaultCredentialsProvider;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
@@ -37,23 +40,53 @@ public class FuzzyCrawler {
 		return mapForPagesFoundByLoginStatus.get(loggedIn);
 	}
 
-	public static void generatePagesNotLoggedIn(Properties properties,
-			WebClient webClient) throws URISyntaxException {
-		URI baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
-		generatePages(baseURI, webClient, false,
-				Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000);
-	}
+    public static void generatePagesNotLoggedIn(Properties properties, WebClient webClient) throws URISyntaxException {
 
-	public static void generatePagesLoggedIn(Properties properties,
-			WebClient webClient) throws URISyntaxException {
+        Long delay = Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000;
+
+        URI baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
+        generatePages(baseURI, webClient, false, delay);
+
+        Boolean guessed = Boolean.parseBoolean(properties.getProperty("PageGuessing"));
+
+        if (guessed) {
+            for (String potentialPage : FuzzVectors.getCommonPages()) {
+                URL url;
+                try {
+                    url = new URL(baseURI.toURL(), potentialPage);
+                    generatePages(url.toURI(), webClient, false, delay, guessed);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+    }
+
+	public static void generatePagesLoggedIn(Properties properties,	WebClient webClient) throws URISyntaxException {
 
 		webClientLogin(properties, webClient);
 		
 		URI baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
-		generatePages(baseURI, webClient, true,
-				Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000);
+		Long delay = Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000;
+		
+		generatePages(baseURI, webClient, true, delay);
+		
+		Boolean guessed = Boolean.parseBoolean(properties.getProperty("PageGuessing"));
+
+        if (guessed) {
+            for (String potentialPage : FuzzVectors.getCommonPages()) {
+                URL url;
+                try {
+                    url = new URL(baseURI.toURL(), potentialPage);
+                    generatePages(url.toURI(), webClient, false, delay, guessed);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 	}
-	
+
 	public static void webClientLogin(Properties properties, WebClient webClient){
 		
 		DefaultCredentialsProvider prov = (DefaultCredentialsProvider) webClient
@@ -72,8 +105,7 @@ public class FuzzyCrawler {
 		webClient.setJavaScriptEnabled(true);
 	}
 
-	private static void login(WebClient webClient, String uri, String username,
-			String password) {
+    private static void login(WebClient webClient, String uri, String username, String password) {
 
 		try {
 			HtmlPage page = webClient.getPage(uri);
@@ -82,8 +114,7 @@ public class FuzzyCrawler {
 			HtmlElement elem1 = page.getElementById("password");
 			elem1.setAttribute("value", password);
 
-			HtmlSubmitInput button = (HtmlSubmitInput) page.getByXPath(
-					"//input[@type='submit']").get(0);
+            HtmlSubmitInput button = (HtmlSubmitInput) page.getByXPath("//input[@type='submit']").get(0);
 
 			button.click();
 
@@ -100,39 +131,44 @@ public class FuzzyCrawler {
 
 	}
 
-	private static void generatePages(URI pageURI, WebClient webClient,
-			Boolean loggedIn, Long delay) {
-		// Page not yet scraped
-		if (!mapForPagesFoundByLoginStatus.get(loggedIn).containsKey(pageURI)) {
-			try {
-				HtmlPage page = webClient.getPage(pageURI.toString());
-				try {
-					Thread.sleep(delay);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				FuzzyPage fuzzyPage = new FuzzyPage(page);
+    private static void generatePages(URI pageURI, WebClient webClient, Boolean loggedIn, Long delay) {
+        generatePages(pageURI, webClient, loggedIn, delay, false);
+    }
 
-				mapForPagesFoundByLoginStatus.get(loggedIn).put(pageURI,
-						fuzzyPage);
+    private static void generatePages(URI pageURI, WebClient webClient, Boolean loggedIn, Long delay, Boolean guessed) {
+        // Page not yet scraped
+        if (!mapForPagesFoundByLoginStatus.get(loggedIn).containsKey(pageURI)) {
+            try {
+                HtmlPage page = webClient.getPage(pageURI.toString());
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                FuzzyPage fuzzyPage = new FuzzyPage(page);
 
-				// Scrape page
-				for (URI uri : fuzzyPage.getAllPageURIs()) {
-					// Check if it has been scraped already.
-					if (!mapForPagesFoundByLoginStatus.get(loggedIn)
-							.containsKey(uri)) {
-						generatePages(uri, webClient, loggedIn, delay);
-					}
-				}
+                fuzzyPage.setGuessed(guessed);
 
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
+                mapForPagesFoundByLoginStatus.get(loggedIn).put(pageURI, fuzzyPage);
+
+                // Scrape page
+                for (URI uri : fuzzyPage.getAllPageURIs()) {
+                    // Check if it has been scraped already.
+                    if (!mapForPagesFoundByLoginStatus.get(loggedIn).containsKey(uri)) {
+                        generatePages(uri, webClient, loggedIn, delay);
+                    }
+                }
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (FailingHttpStatusCodeException e) {
+                // TODO: determine what to do when it is a 404
+            }
+        }
+    }
 
 	public static void dumpDiscoveredURIsToFile() {
 		try {
