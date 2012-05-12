@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
+import java.util.Stack;
 
 import utils.FuzzVectors;
 import utils.FuzzyLogger;
@@ -31,8 +33,12 @@ import fuzz.you.crawler.FuzzyPage;
 public class FuzzEngine {
 
     private static Properties properties;
+    private static Random random;
+    private static ArrayList<String> allVectorStrings = (ArrayList<String>) FuzzVectors.getAllVectorStrings();
 
     public static void main(String[] args) {
+    	random = new Random();
+    	
         System.getProperties().put(
                 "org.apache.commons.logging.simplelog.defaultlog", "error");
 
@@ -104,7 +110,7 @@ public class FuzzEngine {
             // generate a random string for the uri
         	List<String> randomStrings = new ArrayList<String>();
         	if(properties.getProperty("Completeness").equals("full")) {
-        		randomStrings = FuzzVectors.getAllVectorStrings();
+        		randomStrings = allVectorStrings;
         	}
         	else if(properties.getProperty("Completeness").equals("random")) {
         		randomStrings.add(RandomFuzzer.getRandomString());
@@ -182,9 +188,30 @@ public class FuzzEngine {
                 fuzzInputWithAllVectors(input, form.getSubmitButton());
             }
 
-            // try fuzzing combinations of inputs
-            // R2?
+            // fuzz all inputs at once!
+            for(int i=0; i<Integer.parseInt(properties.getProperty("FullFormFuzzLoops")); i++) {
+            	fuzzAllInputsRandomly(form);
+            }
         }
+    }
+    
+    private static void fuzzAllInputsRandomly(FuzzyForm form) { 
+    	for(HtmlSubmitInput submit : form.getSubmitButton()) {
+	    	String fuzzedInputNames = "";
+	    	String fuzzedInputs = "";
+	    	for(HtmlElement input : form.getAllInputs()) {
+	    		String inputName = input.getAttribute("name") + ";";
+	    		fuzzedInputNames += inputName;
+	    		
+	    		String fuzzedValue = allVectorStrings.get(random.nextInt(allVectorStrings.size()));
+	    		fuzzedInputs += inputName + "=" + fuzzedValue + ";";
+	    		input.setAttribute("value", fuzzedValue);
+	    	}
+	    	ResultsProcessor.setLastInputName(fuzzedInputNames);
+	    	ResultsProcessor.setLastInput(fuzzedInputs);
+	    	submitForm(submit, "");
+    	}
+
     }
 
     private static void fuzzInputWithAllVectors(HtmlElement input,
@@ -200,29 +227,34 @@ public class FuzzEngine {
     private static void fuzzInputWithStrings(HtmlElement input,
             HtmlSubmitInput submit, String[] strings, String attackVector) {
         for (String randomInput : strings) {
-        	try {
-	        	ResultsProcessor.setLastInput(input.getAttribute("name") + "=" + randomInput);
-	        	ResultsProcessor.setLastInputName(input.getAttribute("name"));
-	            Thread.sleep(Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000);
-	            
-	        	input.setAttribute("value", randomInput);
-            	boolean noErrorIsError = false;
-            	if(attackVector.equals("xss") || attackVector.equals("activeSQL") || attackVector.equals("passiveSQL")) {
-            		noErrorIsError = true;
-            	}
-                ResultsProcessor.processWebResponse(submit.<HtmlPage> click()
-                        .getWebResponse(), noErrorIsError, attackVector);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (NumberFormatException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+        	ResultsProcessor.setLastInput(input.getAttribute("name") + "=" + randomInput);
+        	ResultsProcessor.setLastInputName(input.getAttribute("name"));
+        	input.setAttribute("value", randomInput);
+        	
+        	submitForm(submit, attackVector);
         }
     }
 
+    private static void submitForm(HtmlSubmitInput submit, String attackVector) {
+    	try {
+	    	Thread.sleep(Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000);
+	    	
+	    	boolean noErrorIsError = false;
+	    	if(attackVector.equals("xss") || attackVector.equals("activeSQL") || attackVector.equals("passiveSQL")) {
+	    		noErrorIsError = true;
+	    	}
+	        ResultsProcessor.processWebResponse(submit.<HtmlPage> click()
+	                .getWebResponse(), noErrorIsError, attackVector);
+	
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    } catch (NumberFormatException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+	    } catch (InterruptedException e) {
+	        // TODO Auto-generated catch block
+	        e.printStackTrace();
+	    }
+    }
+    
 }
