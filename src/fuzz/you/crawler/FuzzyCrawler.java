@@ -12,6 +12,7 @@ import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 
 public class FuzzyCrawler {
     /**
@@ -71,7 +72,10 @@ public class FuzzyCrawler {
             HtmlElement elem1 = page.getElementById("password");
             elem1.setAttribute("value", password);
 
-            page.getElementById("submit").click();
+            HtmlSubmitInput button = (HtmlSubmitInput) page.getByXPath(
+                    "//input[@type='submit']").get(0);
+
+            button.click();
 
         } catch (FailingHttpStatusCodeException e) {
             // TODO Auto-generated catch block
