@@ -2,7 +2,6 @@ package utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -69,6 +68,7 @@ public class FuzzVectors {
             "\" or \"a\"=\"a",
             "') or ('a'='a",
             "Admin' OR '",
+            "') or 1 = 1; --",
             "'%20SELECT%20*%20FROM%20INFORMATION_SCHEMA.TABLES--",
             ") UNION SELECT%20*%20FROM%20INFORMATION_SCHEMA.TABLES;",
             "' having 1=1--",
@@ -136,6 +136,16 @@ public class FuzzVectors {
             "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><!DOCTYPE foo [<!ELEMENT foo ANY><!ENTITY xxe SYSTEM \"file:///etc/shadow\">]><foo>&xee;</foo>",
             "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><!DOCTYPE foo [<!ELEMENT foo ANY><!ENTITY xxe SYSTEM \"file:///dev/random\">]><foo>&xee;</foo>", };
 
+    private static String commonUserNames[] = { "admin", "administrator",
+            "test", "anonymous", "guest", "user", "root", "info", "adm",
+            "mysql", "oracle", "tomcat6", "www-data", "www", "log", "apache",
+            "email" };
+
+    private static String commonPasswords[] = { "admin", "administrator",
+            "test", "anonymous", "guest", "user", "", "root", "info", "adm",
+            "mysql", " ", "oracle", "tomcat6", "www-data", "www", "log",
+            "apache", "email", "test" };
+
     static {
         allVectors.add(activeSQLInjectAttacks);
         allVectors.add(bufferOverflowAttacks);
@@ -145,23 +155,26 @@ public class FuzzVectors {
         allVectors.add(XMLInjectAttacks);
         allVectors.add(xpathAttacks);
         allVectors.add(XSSAttacks);
+        allVectors.add(commonPasswords);
+        allVectors.add(commonUserNames);
     }
 
     public static List<String> getAllVectorStrings() {
-    	List<String> allVectorStrings = new ArrayList<String>();
-    	for(String[] vectorList : getAllVectors()) {
-    		allVectorStrings.addAll(Arrays.asList(vectorList));
-    	}
-    	return allVectorStrings;
+        List<String> allVectorStrings = new ArrayList<String>();
+        for (String[] vectorList : getAllVectors()) {
+            allVectorStrings.addAll(Arrays.asList(vectorList));
+        }
+        return allVectorStrings;
     }
-    
+
     public static List<String[]> getAllVectors() {
         return allVectors;
     }
 
     public static String[] getAllVectorClasses() {
         return new String[] { "activeSQL", "string", "int", "xss",
-                "passiveSQL", "ldap", "xpath", "xml" };
+                "passiveSQL", "ldap", "xpath", "xml", "usernames",
+                "passwords" };
     }
 
     public static String[] getAttackClass(final String attackClass) {
@@ -184,6 +197,10 @@ public class FuzzVectors {
         } else if (attackClass.equals("sql")) {
             return ArrayUtils.addAll(passSQLInjectAttacks,
                     activeSQLInjectAttacks);
+        } else if (attackClass.equals("passwords")) {
+            return commonPasswords;
+        } else if (attackClass.equals("usernames")) {
+            return commonUserNames;
         }
 
         return null;

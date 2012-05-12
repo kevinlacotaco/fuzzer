@@ -56,6 +56,14 @@ public class ResultsProcessor {
 				}
 			}
 		}
+		
+		for (String sensitiveString : SensitiveData.getSensitiveData()) {
+            if (response.getContentAsString().contains(sensitiveString)) {
+                FuzzyLogger.logError("Found Sensitive Data: "
+                        + sensitiveString + " in page "
+                        + response.getWebRequest().getUrl());
+            }
+        }
 	}
 	
 }
