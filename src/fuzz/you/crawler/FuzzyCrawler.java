@@ -14,6 +14,7 @@ import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 
 public class FuzzyCrawler {
     /**
@@ -39,7 +40,8 @@ public class FuzzyCrawler {
     public static void generatePagesNotLoggedIn(Properties properties,
             WebClient webClient) throws URISyntaxException {
         URI baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
-        generatePages(baseURI, webClient, false);
+        generatePages(baseURI, webClient, false,
+                Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000);
     }
 
     public static void generatePagesLoggedIn(Properties properties,
@@ -60,7 +62,8 @@ public class FuzzyCrawler {
         webClient.setJavaScriptEnabled(true);
 
         URI baseURI = generateBasicPageURI(properties.getProperty("BaseURI"));
-        generatePages(baseURI, webClient, true);
+        generatePages(baseURI, webClient, true,
+                Long.parseLong(properties.getProperty("TimeDelaySec")) * 1000);
     }
 
     private static void login(WebClient webClient, String uri,
@@ -73,7 +76,10 @@ public class FuzzyCrawler {
             HtmlElement elem1 = page.getElementById("password");
             elem1.setAttribute("value", password);
 
-            page.getElementById("submit").click();
+            HtmlSubmitInput button = (HtmlSubmitInput) page.getByXPath(
+                    "//input[@type='submit']").get(0);
+
+            button.click();
 
         } catch (FailingHttpStatusCodeException e) {
             // TODO Auto-generated catch block
@@ -89,11 +95,17 @@ public class FuzzyCrawler {
     }
 
     private static void generatePages(URI pageURI, WebClient webClient,
-            Boolean loggedIn) {
+            Boolean loggedIn, Long delay) {
         // Page not yet scraped
         if (!mapForPagesFoundByLoginStatus.get(loggedIn).containsKey(pageURI)) {
             try {
                 HtmlPage page = webClient.getPage(pageURI.toString());
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
                 FuzzyPage fuzzyPage = new FuzzyPage(page);
 
                 mapForPagesFoundByLoginStatus.get(loggedIn).put(pageURI,
@@ -104,7 +116,7 @@ public class FuzzyCrawler {
                     // Check if it has been scraped already.
                     if (!mapForPagesFoundByLoginStatus.get(loggedIn)
                             .containsKey(uri)) {
-                        generatePages(uri, webClient, loggedIn);
+                        generatePages(uri, webClient, loggedIn, delay);
                     }
                 }
 
