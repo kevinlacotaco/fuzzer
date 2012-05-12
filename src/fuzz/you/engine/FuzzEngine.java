@@ -150,12 +150,20 @@ public class FuzzEngine {
         try {
             HtmlPage checkedPage = webClient.getPage(urlWithParams);
             ResultsProcessor.processWebResponse(checkedPage.getWebResponse());
+            Thread.sleep(Long.parseLong(properties
+                    .getProperty("TimeDelaySec")) * 1000);
         } catch (FailingHttpStatusCodeException e) {
             FuzzyLogger.logError(e.getMessage());
         } catch (MalformedURLException e) {
             FuzzyLogger.logError(e.getMessage());
         } catch (IOException e) {
             FuzzyLogger.logError(e.getMessage());
+        } catch (NumberFormatException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
 
     }
@@ -172,14 +180,14 @@ public class FuzzEngine {
             // R2?
         }
     }
-    
+
     private static void fuzzInputWithAllVectors(HtmlElement input,
             List<HtmlSubmitInput> submits) {
         for (String vectorName : FuzzVectors.getAllVectorClasses()) {
-        	for(HtmlSubmitInput submit : submits) {
-        		fuzzInputWithStrings(input, submit,
-                    FuzzVectors.getAttackClass(vectorName));
-        	}
+            for (HtmlSubmitInput submit : submits) {
+                fuzzInputWithStrings(input, submit,
+                        FuzzVectors.getAttackClass(vectorName));
+            }
         }
     }
 
@@ -187,10 +195,18 @@ public class FuzzEngine {
             HtmlSubmitInput submit, String[] strings) {
         for (String randomInput : strings) {
             input.setAttribute("value", randomInput);
-        	try {
+            try {
                 ResultsProcessor.processWebResponse(submit.<HtmlPage> click()
                         .getWebResponse());
+                Thread.sleep(Long.parseLong(properties
+                        .getProperty("TimeDelaySec")) * 1000);
             } catch (IOException e) {
+                e.printStackTrace();
+            } catch (NumberFormatException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
