@@ -139,12 +139,27 @@ public class FuzzVectors {
     private static String commonUserNames[] = { "admin", "administrator",
             "test", "anonymous", "guest", "user", "root", "info", "adm",
             "mysql", "oracle", "tomcat6", "www-data", "www", "log", "apache",
-            "email" };
+            "email", "test1", "test123" };
 
+    // http://netforbeginners.about.com/od/scamsandidentitytheft/tp/The-Most-Common-Passwords-2011.htm
+    // http://www.tomshardware.com/news/imperva-rockyou-most-common-passwords,9486.html
+    // http://www.whatsmypass.com/the-top-500-worst-passwords-of-all-time
     private static String commonPasswords[] = { "admin", "administrator",
             "test", "anonymous", "guest", "user", "", "root", "info", "adm",
             "mysql", " ", "oracle", "tomcat6", "www-data", "www", "log",
-            "apache", "email", "test" };
+            "apache", "email", "test", "123456", "12345", "love", "god", "password",
+            "Password", "Passw0rd", "seinfeld", "princess", "peanut", "shadow",
+            "ginger", "michael", "sunshine", "tigger", "bailey", "123456789",
+            "1234567890", "iloveyou", "rockyou", "1234567", "12345678", "abc123",
+            "qwerty", "qwertyuiop", "qwer123", "asfd", "asdf123", "Nicole", "Daniel",
+            "babygirl", "monkey", "Jessica", "Lovely", "Ashley", "654321", "Qwerty",
+            "pussy", "dragon", "696969", "mustang", "letmein", "baseball", "master", 
+            "football", "pass", "fuckme", "6969", "jordan", "harley", "ranger", "iwantu",
+            "jennifer", "hunter", "fuck", "2000", "batman", "trustno1", "thomas",
+            "robert", "access", "buster", "soccer", "hocket", "killer", "george", "sexy",
+            "andrew", "charlie", "superman", "asshold", "fuckyou", "dallas", "1111", "pepper",
+            "golfer", "summer", "hammer", "yankees", "joshua", "enter", "silver", "jesus",
+            "christ", "jesus1", "blessed"};
 
     private static String commonPages[] = { "index", "admin", "users",
             "user", "administrator", "about ", "faq", "contact", "news",

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Properties;
 
 import utils.FuzzVectors;
+import utils.ResultsProcessor;
 
 import com.gargoylesoftware.htmlunit.DefaultCredentialsProvider;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
@@ -73,7 +74,7 @@ public class FuzzyCrawler {
 		webClient.setCredentialsProvider(prov);
 
         login(webClient, properties.getProperty("LoginURI"), properties.getProperty("UserName"),
-                properties.getProperty("Password"));
+                properties.getProperty("Password"), false);
 
 		webClient.setJavaScriptEnabled(true);
 
@@ -98,7 +99,7 @@ public class FuzzyCrawler {
         }
     }
 
-    private static void login(WebClient webClient, String uri, String username, String password) {
+    public static void login(WebClient webClient, String uri, String username, String password, boolean isGuessing) {
 
 		try {
 			HtmlPage page = webClient.getPage(uri);
@@ -109,8 +110,8 @@ public class FuzzyCrawler {
 
             HtmlSubmitInput button = (HtmlSubmitInput) page.getByXPath("//input[@type='submit']").get(0);
 
-			button.click();
-
+			ResultsProcessor.processLoginResponse(button.click().getWebResponse(), username, password, isGuessing);
+			
 		} catch (FailingHttpStatusCodeException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

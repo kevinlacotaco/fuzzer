@@ -32,6 +32,19 @@ public class ResultsProcessor {
 		}
 	}
 	
+	public static void processLoginResponse(WebResponse response, String username, String password, boolean shouldFail) {
+		String key = response.getWebRequest().getUrl() + "::username=" + username + "::password=" + password + "::";
+		
+		if(response.getContentAsString().contains("You supplied an invalid name or password.") && !shouldFail) {
+			// failed but shouldnt
+			FuzzyLogger.logError(key + "Failed to login, given valid credentials!");
+		}
+		else if (!response.getContentAsString().contains("You supplied an invalid name or password.") && shouldFail) {
+			// didnt fail but should
+			FuzzyLogger.logError(key + "Logged in by guessing!");
+		}
+	}
+	
 	public static void processWebResponse(WebResponse response, boolean noErrorIsError, String attackVector) {
 		String key = response.getWebRequest().getUrl() + "::" + lastInputName + "::";
 		

@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
-import java.util.Stack;
 
 import utils.FuzzVectors;
 import utils.FuzzyLogger;
@@ -62,6 +61,20 @@ public class FuzzEngine {
                     .values()) {
                 fuzzURLParams(page, webClient);
                 fuzzFormInputs(page);
+            }
+            
+            // try guessing usernames and passwords
+            if(Boolean.parseBoolean(properties.getProperty("PasswordGuessing"))) {
+            	System.out.println("Guessing Passwords");
+            	String[] usernames = FuzzVectors.getAttackClass("usernames");
+            	String[] passwords = FuzzVectors.getAttackClass("passwords");
+            	String uri = properties.getProperty("LoginURI");
+            	
+            	for(String username : usernames) {
+            		for(String password : passwords) {
+            			FuzzyCrawler.login(webClient, uri, username, password, true);
+            		}
+            	}
             }
 
             // scrape logged in

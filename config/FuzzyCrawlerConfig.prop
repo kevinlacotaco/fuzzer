@@ -15,3 +15,4 @@ FullUrlParamFuzzing=False
 Log400=False
 LogBadURI=False
 FullFormFuzzLoops=10
+PasswordGuessing=True
