@@ -57,6 +57,9 @@ public class FuzzEngine {
 
             // scrape logged in
             FuzzyCrawler.generatePagesLoggedIn(properties, webClient);
+            
+            // dump discovered URIs to file as serialized data
+            FuzzyCrawler.dumpDiscoveredURIsToFile();
 
             // for every page we found while logged in, fuzz it
             // note that the webClient should still be logged in

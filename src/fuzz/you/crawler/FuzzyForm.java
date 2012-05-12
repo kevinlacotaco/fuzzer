@@ -1,5 +1,6 @@
 package fuzz.you.crawler;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +23,8 @@ import com.gargoylesoftware.htmlunit.javascript.NamedNodeMap;
  * @author
  *
  */
-public class FuzzyForm{
+@SuppressWarnings("serial")
+public class FuzzyForm implements Serializable{
 
 	private HtmlForm fuzzyForm;
 	private List<HtmlElement> lostChildrenElements;

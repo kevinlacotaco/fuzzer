@@ -1,5 +1,6 @@
 package fuzz.you.crawler;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -15,19 +16,14 @@ import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.util.UrlUtils;
 
-public class FuzzyPage {
+@SuppressWarnings("serial")
+public class FuzzyPage implements Serializable {
 
-    private Page fuzzyPage;
+	private Page fuzzyPage;
     private URI baseURI;
-    private String UserName = null;
-    private String Password = null;
     private HashSet<URI> fuzzyPageURIsSet;
     private List<FuzzyForm> fuzzyPageForms;
     private Map<String, List<String>> urlParams;
-
-    // Each page -> URL Params as collection
-    // UserName & Pass Params
-    //
 
     protected FuzzyPage(Page page) {
 

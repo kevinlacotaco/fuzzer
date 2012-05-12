@@ -1,6 +1,8 @@
 package fuzz.you.crawler;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -114,14 +116,20 @@ public class FuzzyCrawler {
         }
     }
 
-    private static URI generateBasicPageURI(URI fullURI)
-            throws URISyntaxException {
-        // (scheme:)([user-info@]host[:port])([path][?query])
-        URI baseURI = new URI(fullURI.getScheme(),
-                fullURI.getSchemeSpecificPart(), null);
-        return baseURI;
+    public static void dumpDiscoveredURIsToFile(){
+    	try
+        {
+           FileOutputStream fos = new FileOutputStream("resources/DiscoveredURIs.crawl");
+           ObjectOutputStream oos = new ObjectOutputStream(fos);
+           oos.writeObject(mapForPagesFoundByLoginStatus);
+           oos.close();
+           fos.close();
+        }catch(IOException ioe)
+        {
+            ioe.printStackTrace();
+        }
     }
-
+    
     private static URI generateBasicPageURI(String fullURI)
             throws URISyntaxException {
         // (scheme:)([user-info@]host[:port])([path][?query])
